@@ -6,7 +6,30 @@ import {
   Users,
 } from "lucide-react";
 
-export function Sidebar({ onSignOut }) {
+const navItems = [
+  {
+    icon: LayoutDashboard,
+    id: "dashboard",
+    label: "Dashboard",
+  },
+  {
+    icon: FolderKanban,
+    id: "projects",
+    label: "Projects",
+  },
+  {
+    icon: ClipboardList,
+    id: "tasks",
+    label: "Tasks",
+  },
+  {
+    icon: Users,
+    id: "members",
+    label: "Members",
+  },
+];
+
+export function Sidebar({ activeView, currentUser, onSignOut, onViewChange }) {
   return (
     <aside className="sidebar">
       <div className="app-title">
@@ -16,23 +39,29 @@ export function Sidebar({ onSignOut }) {
           <span>Workspace</span>
         </div>
       </div>
+      {currentUser && (
+        <div className="user-card">
+          <span>Signed in as</span>
+          <strong>{currentUser.name}</strong>
+          <small>{currentUser.email}</small>
+        </div>
+      )}
       <nav>
-        <a href="#dashboard">
-          <LayoutDashboard size={17} />
-          Dashboard
-        </a>
-        <a href="#projects">
-          <FolderKanban size={17} />
-          Projects
-        </a>
-        <a href="#tasks">
-          <ClipboardList size={17} />
-          Tasks
-        </a>
-        <a href="#members">
-          <Users size={17} />
-          Members
-        </a>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <button
+              className={activeView === item.id ? "active" : ""}
+              key={item.id}
+              type="button"
+              onClick={() => onViewChange(item.id)}
+            >
+              <Icon size={17} />
+              {item.label}
+            </button>
+          );
+        })}
       </nav>
       <button className="ghost-action" type="button" onClick={onSignOut}>
         <LogOut size={17} />

@@ -7,20 +7,31 @@ export function MembersPanel({
   onAddMember,
   onMemberFormChange,
   onRemoveMember,
+  users = [],
 }) {
+  const projectUserIds = new Set(members.map((item) => item.user.id));
+  const availableUsers = users.filter((user) => !projectUserIds.has(user.id));
+  const hasUserDirectory = users.length > 0;
+
   return (
     <div className="panel" id="members">
       <div className="panel-header">
         <h2>Members</h2>
+        <span>{members.length} active</span>
       </div>
       {isAdmin && (
         <form className="compact-form" onSubmit={onAddMember}>
-          <input
+          <select
             value={memberForm.userId}
             onChange={(event) => onMemberFormChange("userId", event.target.value)}
-            placeholder="User ID"
-            type="number"
-          />
+          >
+            <option value="">Select user</option>
+            {availableUsers.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name} ({user.email})
+              </option>
+            ))}
+          </select>
           <select
             value={memberForm.role}
             onChange={(event) => onMemberFormChange("role", event.target.value)}
@@ -33,6 +44,16 @@ export function MembersPanel({
             Add
           </button>
         </form>
+      )}
+      {isAdmin && !hasUserDirectory && (
+        <p className="panel-note">
+          Restart the backend to load the registered user directory.
+        </p>
+      )}
+      {isAdmin && hasUserDirectory && availableUsers.length === 0 && (
+        <p className="panel-note">
+          All registered users are already in this project.
+        </p>
       )}
       <div className="member-list">
         {members.map((item) => (

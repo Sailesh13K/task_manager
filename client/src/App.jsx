@@ -9,13 +9,12 @@ import { EMPTY_TASK_FORM } from "./constants/tasks";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { SignupPage } from "./pages/SignupPage";
 
 function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem("taskflowToken") || "",
   );
-
-  const [authMode, setAuthMode] = useState("login");
 
   const [authForm, setAuthForm] = useState({
     name: "",
@@ -24,6 +23,8 @@ function App() {
   });
 
   const [projects, setProjects] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const [members, setMembers] = useState([]);
@@ -47,6 +48,7 @@ function App() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const api = useMemo(() => createApiClient(token), [token]);
@@ -77,11 +79,19 @@ function App() {
       setError("");
 
       try {
+        const [userData, userList] = await Promise.all([
+          api("/api/users/me").catch(() => null),
+          api("/api/users").catch(() => []),
+        ]);
+
         const [projectList, dashboardData, assignedTasks] = await Promise.all([
           api("/api/projects/my-projects"),
           api("/api/dashboard"),
           api("/api/tasks/my-tasks"),
         ]);
+
+        setCurrentUser(userData);
+        setUsers(userList);
 
         setProjects(projectList);
         setDashboard(dashboardData);
@@ -122,7 +132,7 @@ function App() {
     }
   }, [token, loadWorkspace]);
 
-  async function handleAuth(event) {
+  async function handleAuth(event, mode) {
     event.preventDefault();
 
     setError("");
@@ -137,17 +147,27 @@ function App() {
       return;
     }
 
+    if (mode === "signup" && !authForm.name.trim()) {
+      setError("Name is required");
+      return;
+    }
+
+    setAuthLoading(true);
+
     try {
-      const path =
-        authMode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      const path = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
 
       const body =
-        authMode === "login"
+        mode === "login"
           ? {
-              email: authForm.email,
+              email: authForm.email.trim(),
               password: authForm.password,
             }
-          : authForm;
+          : {
+              name: authForm.name.trim(),
+              email: authForm.email.trim(),
+              password: authForm.password,
+            };
 
       const data = await api(path, {
         method: "POST",
@@ -158,11 +178,17 @@ function App() {
 
       setToken(data.token);
 
-      setMessage(
-        authMode === "login" ? "Signed in successfully" : "Account created",
-      );
+      setAuthForm({
+        name: "",
+        email: "",
+        password: "",
+      });
+
+      setMessage(mode === "login" ? "Signed in successfully" : "Account created");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setAuthLoading(false);
     }
   }
 
@@ -199,6 +225,11 @@ function App() {
     event.preventDefault();
 
     setError("");
+
+    if (!memberForm.userId) {
+      setError("Select a user to add");
+      return;
+    }
 
     try {
       await api(`/api/projects/${selectedProjectId}/members`, {
@@ -325,6 +356,8 @@ function App() {
     setToken("");
 
     setProjects([]);
+    setCurrentUser(null);
+    setUsers([]);
     setSelectedProject(null);
     setSelectedProjectId("");
 
@@ -345,16 +378,37 @@ function App() {
             ) : (
               <LoginPage
                 authForm={authForm}
-                authMode={authMode}
+                authLoading={authLoading}
                 error={error}
-                onAuthModeChange={setAuthMode}
                 onChange={(field, value) =>
                   setAuthForm({
                     ...authForm,
                     [field]: value,
                   })
                 }
-                onSubmit={handleAuth}
+                onSubmit={(event) => handleAuth(event, "login")}
+              />
+            )
+          }
+        />
+
+        <Route
+          path="/signup"
+          element={
+            token ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <SignupPage
+                authForm={authForm}
+                authLoading={authLoading}
+                error={error}
+                onChange={(field, value) =>
+                  setAuthForm({
+                    ...authForm,
+                    [field]: value,
+                  })
+                }
+                onSubmit={(event) => handleAuth(event, "signup")}
               />
             )
           }
@@ -366,6 +420,7 @@ function App() {
             token ? (
               <DashboardPage
                 dashboard={dashboard}
+                currentUser={currentUser}
                 error={error}
                 isAdmin={isAdmin}
                 loading={loading}
@@ -379,6 +434,7 @@ function App() {
                 selectedProjectId={selectedProjectId}
                 taskForm={taskForm}
                 tasks={tasks}
+                users={users}
                 editingTaskId={editingTaskId}
                 loadWorkspace={loadWorkspace}
                 signOut={signOut}

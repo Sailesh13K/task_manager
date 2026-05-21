@@ -1,20 +1,30 @@
-import { LogIn } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AuthLayout } from "../components/AuthLayout";
 
-export function LoginPage({ authForm, authLoading, error, onChange, onSubmit }) {
+export function SignupPage({ authForm, authLoading, error, onChange, onSubmit }) {
   return (
     <AuthLayout
       error={error}
-      title="Login"
-      subtitle="Welcome back to your TaskFlow workspace."
+      title="Signup"
+      subtitle="Create your account and start managing projects."
     >
       <form className="auth-form" onSubmit={onSubmit}>
+        <label>
+          Name
+          <input
+            autoComplete="name"
+            autoFocus
+            value={authForm.name}
+            onChange={(event) => onChange("name", event.target.value)}
+            placeholder="Sailesh"
+          />
+        </label>
+
         <label>
           Email
           <input
             autoComplete="email"
-            autoFocus
             value={authForm.email}
             onChange={(event) => onChange("email", event.target.value)}
             placeholder="you@example.com"
@@ -25,7 +35,7 @@ export function LoginPage({ authForm, authLoading, error, onChange, onSubmit }) 
         <label>
           Password
           <input
-            autoComplete="current-password"
+            autoComplete="new-password"
             value={authForm.password}
             onChange={(event) => onChange("password", event.target.value)}
             placeholder="Minimum 6 characters"
@@ -34,12 +44,12 @@ export function LoginPage({ authForm, authLoading, error, onChange, onSubmit }) 
         </label>
 
         <button className="primary-action" disabled={authLoading} type="submit">
-          <LogIn size={17} />
-          {authLoading ? "Logging in..." : "Login"}
+          <UserPlus size={17} />
+          {authLoading ? "Creating account..." : "Create account"}
         </button>
 
         <p className="auth-link">
-          New here? <Link to="/signup">Create an account</Link>
+          Already registered? <Link to="/login">Login</Link>
         </p>
       </form>
     </AuthLayout>

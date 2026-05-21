@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AlertCircle, CheckCircle2, RefreshCcw } from "lucide-react";
 import { DashboardMetrics } from "../components/DashboardMetrics";
 import { MembersPanel } from "../components/MembersPanel";
@@ -8,8 +9,11 @@ import { Sidebar } from "../components/Sidebar";
 import { TasksPanel } from "../components/TasksPanel";
 
 export function DashboardPage(props) {
+  const [activeView, setActiveView] = useState("dashboard");
+
   const {
     dashboard,
+    currentUser,
     error,
     isAdmin,
     loading,
@@ -23,6 +27,7 @@ export function DashboardPage(props) {
     selectedProjectId,
     taskForm,
     tasks,
+    users,
     editingTaskId,
     loadWorkspace,
     signOut,
@@ -38,15 +43,41 @@ export function DashboardPage(props) {
     deleteTask,
   } = props;
 
+  const viewTitles = {
+    dashboard: {
+      eyebrow: "Workspace overview",
+      title: selectedProject?.name || "Project workspace",
+    },
+    projects: {
+      eyebrow: "Planning",
+      title: "Projects",
+    },
+    tasks: {
+      eyebrow: selectedProject?.name || "Selected project",
+      title: "Tasks",
+    },
+    members: {
+      eyebrow: selectedProject?.name || "Selected project",
+      title: "Members",
+    },
+  };
+
+  const activeTitle = viewTitles[activeView];
+
   return (
     <main className="app-shell">
-      <Sidebar onSignOut={signOut} />
+      <Sidebar
+        activeView={activeView}
+        currentUser={currentUser}
+        onSignOut={signOut}
+        onViewChange={setActiveView}
+      />
 
       <section className="workspace">
         <header className="topbar">
           <div>
-            <span className="eyebrow">Workspace overview</span>
-            <h1>{selectedProject?.name || "Project workspace"}</h1>
+            <span className="eyebrow">{activeTitle.eyebrow}</span>
+            <h1>{activeTitle.title}</h1>
           </div>
 
           <button
@@ -85,48 +116,62 @@ export function DashboardPage(props) {
           </div>
         )}
 
-        <DashboardMetrics dashboard={dashboard} />
+        {activeView === "dashboard" && (
+          <section className="dashboard-view">
+            <DashboardMetrics dashboard={dashboard} />
+            <MyTasksPanel tasks={myTasks} />
+          </section>
+        )}
 
-        <section className="layout-grid">
-          <ProjectsPanel
-            onCreateProject={createProject}
-            onProjectFormChange={(field, value) =>
-              setProjectForm({ ...projectForm, [field]: value })
-            }
-            onSelectProject={loadWorkspace}
-            projectForm={projectForm}
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-          />
+        {activeView === "projects" && (
+          <section className="view-grid single">
+            <ProjectsPanel
+              onCreateProject={createProject}
+              onProjectFormChange={(field, value) =>
+                setProjectForm({ ...projectForm, [field]: value })
+              }
+              onSelectProject={loadWorkspace}
+              projectForm={projectForm}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+            />
+          </section>
+        )}
 
-          <TasksPanel
-            editingTaskId={editingTaskId}
-            isAdmin={isAdmin}
-            members={members}
-            onDeleteTask={deleteTask}
-            onEditTask={startEditTask}
-            onSaveTask={saveTask}
-            onStatusChange={updateStatus}
-            onTaskFormChange={(field, value) =>
-              setTaskForm({ ...taskForm, [field]: value })
-            }
-            taskForm={taskForm}
-            tasks={tasks}
-          />
+        {activeView === "tasks" && (
+          <section className="view-grid single">
+            <TasksPanel
+              editingTaskId={editingTaskId}
+              isAdmin={isAdmin}
+              members={members}
+              onDeleteTask={deleteTask}
+              onEditTask={startEditTask}
+              onSaveTask={saveTask}
+              onStatusChange={updateStatus}
+              onTaskFormChange={(field, value) =>
+                setTaskForm({ ...taskForm, [field]: value })
+              }
+              taskForm={taskForm}
+              tasks={tasks}
+            />
+          </section>
+        )}
 
-          <MembersPanel
-            isAdmin={isAdmin}
-            memberForm={memberForm}
-            members={members}
-            onAddMember={addMember}
-            onMemberFormChange={(field, value) =>
-              setMemberForm({ ...memberForm, [field]: value })
-            }
-            onRemoveMember={removeMember}
-          />
-
-          <MyTasksPanel tasks={myTasks} />
-        </section>
+        {activeView === "members" && (
+          <section className="view-grid single">
+            <MembersPanel
+              isAdmin={isAdmin}
+              memberForm={memberForm}
+              members={members}
+              onAddMember={addMember}
+              onMemberFormChange={(field, value) =>
+                setMemberForm({ ...memberForm, [field]: value })
+              }
+              onRemoveMember={removeMember}
+              users={users}
+            />
+          </section>
+        )}
       </section>
     </main>
   );
