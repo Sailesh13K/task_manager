@@ -45,6 +45,9 @@ class TaskServiceTest {
     @Mock
     private ProjectMemberRepository projectMemberRepository;
 
+    @Mock
+    private CurrentUserService currentUserService;
+
     @InjectMocks
     private TaskService taskService;
 
@@ -103,7 +106,7 @@ class TaskServiceTest {
         request.setProjectId(project.getId());
         request.setAssignedUserId(outsider.getId());
 
-        when(userRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(projectMemberRepository.findByProjectAndUser(project, admin))
                 .thenReturn(Optional.of(projectMember(admin, Role.ADMIN)));
@@ -125,7 +128,7 @@ class TaskServiceTest {
 
         Task assignedTask = task("Assigned", member);
 
-        when(userRepository.findByEmail(member.getEmail())).thenReturn(Optional.of(member));
+        when(currentUserService.getCurrentUser()).thenReturn(member);
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(projectMemberRepository.findByProjectAndUser(project, member))
                 .thenReturn(Optional.of(projectMember(member, Role.MEMBER)));
@@ -146,7 +149,7 @@ class TaskServiceTest {
         UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
         request.setStatus(TaskStatus.DONE);
 
-        when(userRepository.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
         when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
         when(projectMemberRepository.findByProjectAndUser(project, admin))
                 .thenReturn(Optional.of(projectMember(admin, Role.ADMIN)));
